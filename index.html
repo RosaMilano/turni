@@ -314,6 +314,7 @@
           <div class="field"><label>Cognome</label><input id="wkSurn" placeholder="Rossi"></div>
         </div>
         <div class="field"><label>Telefono (facoltativo)</label><input id="wkPhone" placeholder="+39 ..."></div>
+        <div class="field"><label>Codice di accesso (facoltativo)</label><input id="wkCode" placeholder="Lascia vuoto per generarlo automaticamente" style="text-transform:uppercase;letter-spacing:1px"><div class="hint">Se lo lasci vuoto, il sistema crea un codice automatico. Min. 3 caratteri, solo lettere e numeri.</div></div>
         <button class="btn gold" id="wkBtn" onclick="addWorker()">Crea extra & genera codice</button>
       </div>
       <div class="card">
@@ -706,6 +707,8 @@ async function loadWorkers(){
         +'<input id="en_'+c+'" value="'+String(w.name||'').replace(/"/g,'&quot;')+'"></div></div>'
         +'<div class="field" style="margin-bottom:8px"><label>Telefono</label>'
         +'<input id="ep_'+c+'" value="'+String(w.phone||'').replace(/"/g,'&quot;')+'" placeholder="+39 ..."></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Codice di accesso</label>'
+        +'<input id="ec_'+c+'" value="'+String(w.code||'').replace(/"/g,'&quot;')+'" style="text-transform:uppercase;letter-spacing:1px"><div class="hint">Cambiandolo, il vecchio codice smette di funzionare. Le candidature restano collegate.</div></div>'
         +'<div style="display:flex;gap:8px"><button class="btn gold mini" onclick="saveWk(\''+c+'\',this)">Salva</button>'
         +'<button class="btn ghost mini" onclick="toggleEditWk(\''+c+'\')">Annulla</button></div>'
         +'</div></div>';
@@ -720,10 +723,11 @@ function toggleEditWk(code){
 async function saveWk(code,btn){
   const name=document.getElementById('en_'+code).value.trim();
   const phone=document.getElementById('ep_'+code).value.trim();
+  const newCode=document.getElementById('ec_'+code).value.trim();
   if(!name){toast('Il nome non può essere vuoto','err');return;}
   btnLoad(btn,true,'Salvo…');
   try{
-    await api('editWorker',{pass:SESSION.pass, code, name, surn:'', phone});
+    await api('editWorker',{pass:SESSION.pass, code, name, surn:'', phone, newCode});
     toast('Extra aggiornato','ok');
     loadWorkers();
   }catch(e){ toast(e.message,'err'); btnLoad(btn,false); }
@@ -738,12 +742,13 @@ async function addWorker(){
   const name=document.getElementById('wkName').value.trim();
   const surn=document.getElementById('wkSurn').value.trim();
   const phone=document.getElementById('wkPhone').value.trim();
+  const code=document.getElementById('wkCode').value.trim();
   if(!name||!surn){toast('Inserisci nome e cognome','err');return;}
   const btn=document.getElementById('wkBtn'); btnLoad(btn,true,'Creo…');
   try{
-    const r=await api('addWorker',{pass:SESSION.pass, name,surn,phone});
+    const r=await api('addWorker',{pass:SESSION.pass, name,surn,phone,code});
     toast('Extra creato · codice '+r.code,'ok');
-    document.getElementById('wkName').value='';document.getElementById('wkSurn').value='';document.getElementById('wkPhone').value='';
+    document.getElementById('wkName').value='';document.getElementById('wkSurn').value='';document.getElementById('wkPhone').value='';document.getElementById('wkCode').value='';
     loadWorkers();
   }catch(e){ toast(e.message,'err'); }
   finally{ btnLoad(btn,false); }
