@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turni Extra · Gestione Personale</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root{
+    --ink:#1a1410;
+    --paper:#f4efe6;
+    --paper2:#ebe3d4;
+    --gold:#b8893f;
+    --gold-dk:#8c6529;
+    --green:#3f7d4e;
+    --green-bg:#e3efe4;
+    --red:#a8442f;
+    --red-bg:#f3e0da;
+    --amber:#b07d1d;
+    --amber-bg:#f5ebd2;
+    --line:#d8cdb8;
+    --shadow:0 1px 2px rgba(26,20,16,.06),0 8px 24px rgba(26,20,16,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Outfit',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(184,137,63,.07), transparent 42%),
+      radial-gradient(circle at 88% 82%, rgba(63,125,78,.05), transparent 40%);
+  }
+  .wrap{max-width:840px;margin:0 auto;padding:0 16px 64px}
+
+  /* ---- top bar ---- */
+  header{
+    background:var(--ink);color:var(--paper);
+    padding:18px 0;margin-bottom:24px;
+    border-bottom:3px solid var(--gold);
+  }
+  .hbar{max-width:840px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .logo{
+    width:42px;height:42px;border:2px solid var(--gold);border-radius:50%;
+    display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:900;color:var(--gold);font-size:20px;flex-shrink:0;
+  }
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:19px;letter-spacing:.2px;line-height:1.1}
+  .brand small{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:500;margin-top:2px}
+  .who{font-size:13px;text-align:right}
+  .who b{display:block;font-weight:600}
+  .who button{
+    background:none;border:1px solid rgba(244,239,230,.3);color:var(--paper);
+    padding:4px 10px;border-radius:7px;font-size:11px;cursor:pointer;margin-top:4px;font-family:inherit;
+  }
+  .who button:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ---- cards & generic ---- */
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+  .card h2{font-family:'Fraunces',serif;font-weight:600;font-size:22px;margin-bottom:4px}
+  .card .sub{color:#7a6e5d;font-size:14px;margin-bottom:18px}
+
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#5a5040}
+  input,select{
+    width:100%;font-family:inherit;font-size:15px;padding:11px 13px;
+    border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);
+  }
+  input:focus,select:focus{outline:none;border-color:var(--gold);background:#fff}
+  .field{margin-bottom:14px}
+  .row{display:flex;gap:12px}
+  .row>*{flex:1}
+
+  button.btn{
+    font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;
+    padding:12px 20px;border-radius:10px;border:none;background:var(--ink);color:var(--paper);
+    transition:transform .08s, background .15s;width:100%;
+  }
+  button.btn:hover{background:#000}
+  button.btn:active{transform:scale(.98)}
+  button.btn.gold{background:var(--gold)}
+  button.btn.gold:hover{background:var(--gold-dk)}
+  button.btn:disabled{opacity:.45;cursor:not-allowed}
+  button.mini{width:auto;padding:7px 14px;font-size:13px;border-radius:8px}
+  .ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+  .ghost:hover{background:var(--paper2)}
+
+  .tabs{display:flex;gap:6px;background:var(--paper2);padding:5px;border-radius:12px;margin-bottom:18px}
+  .tabs button{
+    flex:1;font-family:inherit;font-weight:600;font-size:13px;padding:9px;border:none;border-radius:8px;
+    background:none;cursor:pointer;color:#6a5f4d;
+  }
+  .tabs button.active{background:#fff;color:var(--ink);box-shadow:var(--shadow)}
+
+  /* ---- shift cards ---- */
+  .shift{
+    border:1px solid var(--line);border-radius:13px;padding:15px 16px;margin-bottom:12px;background:var(--paper);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .shift.full{opacity:.6}
+  .shift .date{
+    text-align:center;background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:7px 12px;min-width:62px;flex-shrink:0;
+  }
+  .shift .date .d{font-family:'Fraunces',serif;font-size:24px;font-weight:900;line-height:1}
+  .shift .date .m{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-dk);font-weight:600}
+  .shift .info{flex:1;min-width:140px}
+  .shift .info .time{font-weight:600;font-size:16px}
+  .shift .info .note{font-size:13px;color:#7a6e5d}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:4px 11px;border-radius:99px}
+  .pill.ok{background:var(--green-bg);color:var(--green)}
+  .pill.warn{background:var(--amber-bg);color:var(--amber)}
+  .pill.zero{background:var(--red-bg);color:var(--red)}
+  .pill.gray{background:var(--paper2);color:#6a5f4d}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:#fff}
+
+  .counter{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:linear-gradient(135deg,var(--ink),#352a20);color:var(--paper);
+    border-radius:14px;padding:16px 20px;margin-bottom:18px;
+  }
+  .counter .big{font-family:'Fraunces',serif;font-size:34px;font-weight:900;line-height:1;color:var(--gold)}
+  .counter .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;opacity:.8}
+  .counter .bar{flex:1;height:8px;background:rgba(244,239,230,.18);border-radius:99px;overflow:hidden;max-width:200px}
+  .counter .bar i{display:block;height:100%;background:var(--gold);border-radius:99px}
+
+  .empty{text-align:center;padding:36px 16px;color:#9a8e7a}
+  .empty .ic{font-size:40px;opacity:.4;margin-bottom:8px}
+
+  .status-line{font-size:13px;font-weight:600;padding:8px 12px;border-radius:9px;margin-top:8px}
+  .status-line.pending{background:var(--amber-bg);color:var(--amber)}
+  .status-line.conf{background:var(--green-bg);color:var(--green)}
+  .status-line.rej{background:var(--red-bg);color:var(--red)}
+
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);
+    background:var(--ink);color:var(--paper);padding:13px 22px;border-radius:12px;
+    font-size:14px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);
+    opacity:0;transition:.3s;z-index:99;max-width:90%;text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast.err{background:var(--red)}
+  .toast.ok{background:var(--green)}
+
+  .loader{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .center-load{text-align:center;padding:40px;color:#9a8e7a}
+  .center-load .loader{border-color:rgba(26,20,16,.15);border-top-color:var(--gold);width:28px;height:28px}
+
+  .adm-shift{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;background:var(--paper)}
+  .adm-shift .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .cand{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:#fff;border:1px solid var(--line);border-radius:9px;margin-top:7px;flex-wrap:wrap}
+  .cand .nm{font-weight:600;font-size:14px}
+  .cand .ct{font-size:12px;color:#7a6e5d}
+  .cand .acts{display:flex;gap:6px}
+  .btn-ok{background:var(--green);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-no{background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+
+  .worker-tag{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;background:var(--paper)}
+  .worker-tag code{background:var(--ink);color:var(--gold);padding:3px 9px;border-radius:6px;font-size:13px;font-weight:600;letter-spacing:1px}
+  .copybtn{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit}
+
+  .setup{background:var(--amber-bg);border:1px solid #e3cf9a;border-radius:12px;padding:16px;margin-bottom:18px;font-size:13.5px;color:#6a5226}
+  .setup b{color:var(--amber)}
+  .setup code{background:#fff;padding:1px 6px;border-radius:5px;font-size:12px}
+
+  .hint{font-size:12px;color:#9a8e7a;margin-top:5px}
+  hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbar">
+    <div class="brand">
+      <div class="logo">T</div>
+      <div>
+        <h1>Turni Extra</h1>
+        <small>Gestione Personale</small>
+      </div>
+    </div>
+    <div class="who" id="whoBox" style="display:none">
+      <span id="whoName"></span>
+      <button onclick="logout()">Esci</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ CONFIG MANCANTE ============ -->
+  <div id="needConfig" class="setup" style="display:none">
+    <b>⚙ Configurazione richiesta</b><br>
+    Incolla qui l'URL della tua Web App (Apps Script) per attivare il sistema.
+    <div style="margin-top:10px">
+      <input id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:13px">
+      <button class="btn gold mini" style="margin-top:8px" onclick="saveCfg()">Salva URL</button>
+    </div>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <div id="loginView">
+    <div class="card">
+      <h2>Accedi</h2>
+      <p class="sub">Inserisci il tuo codice personale per vedere i turni e candidarti.</p>
+      <div class="field">
+        <label>Codice personale</label>
+        <input id="loginCode" placeholder="es. MR4821" autocomplete="off" style="text-transform:uppercase;letter-spacing:2px;font-weight:600">
+        <div class="hint">Il codice ti viene fornito dal responsabile. Non condividerlo.</div>
+      </div>
+      <button class="btn gold" id="loginBtn" onclick="doLogin()">Entra</button>
+      <hr>
+      <button class="btn ghost mini" onclick="openAdmin()" style="width:100%">Area responsabile</button>
+    </div>
+  </div>
+
+  <!-- ============ ADMIN LOGIN ============ -->
+  <div id="adminLoginView" style="display:none">
+    <div class="card">
+      <h2>Area responsabile</h2>
+      <p class="sub">Accesso riservato al gestore dei turni.</p>
+      <div class="field">
+        <label>Password admin</label>
+        <input id="admPass" type="password" placeholder="••••••••">
+      </div>
+      <button class="btn" id="admBtn" onclick="doAdminLogin()">Entra come responsabile</button>
+      <hr>
+      <button class="btn ghost mini" onclick="show('loginView')" style="width:100%">← Torna all'accesso lavoratori</button>
+    </div>
+  </div>
+
+  <!-- ============ WORKER DASHBOARD ============ -->
+  <div id="workerView" style="display:none">
+    <div class="counter">
+      <div>
+        <div class="lbl">Servizi confermati questo mese</div>
+        <div><span class="big" id="wCount">0</span> <span style="opacity:.7">/ 12</span></div>
+      </div>
+      <div class="bar"><i id="wBar" style="width:0%"></i></div>
+    </div>
+
+    <div id="wLimitMsg"></div>
+
+    <div class="tabs">
+      <button class="active" id="tabAvail" onclick="wTab('avail')">Turni disponibili</button>
+      <button id="tabMine" onclick="wTab('mine')">Le mie candidature</button>
+    </div>
+
+    <div id="wAvail">
+      <div class="center-load"><div class="loader"></div><div style="margin-top:10px">Carico i turni…</div></div>
+    </div>
+    <div id="wMine" style="display:none"></div>
+  </div>
+
+  <!-- ============ ADMIN DASHBOARD ============ -->
+  <div id="adminView" style="display:none">
+    <div class="tabs">
+      <button class="active" id="atabShifts" onclick="aTab('shifts')">Turni & candidature</button>
+      <button id="atabNew" onclick="aTab('new')">Pubblica turno</button>
+      <button id="atabWorkers" onclick="aTab('workers')">Personale</button>
+    </div>
+
+    <!-- turni + candidature -->
+    <div id="aShifts">
+      <div class="center-load"><div class="loader"></div></div>
+    </div>
+
+    <!-- pubblica turno -->
+    <div id="aNew" style="display:none">
+      <div class="card">
+        <h2>Pubblica un turno</h2>
+        <p class="sub">Indica data, orario e quanti posti rendere disponibili.</p>
+        <div class="field">
+          <label>Data</label>
+          <input id="nDate" type="date">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Dalle</label>
+            <input id="nStart" type="time" value="07:00">
+          </div>
+          <div class="field">
+            <label>Alle</label>
+            <input id="nEnd" type="time" value="16:00">
+          </div>
+        </div>
+        <div class="field">
+          <label>Posti disponibili</label>
+          <input id="nSlots" type="number" min="1" value="3">
+        </div>
+        <div class="field">
+          <label>Nota (facoltativa)</label>
+          <input id="nNote" placeholder="es. Catering sala Verdi · abito scuro">
+        </div>
+        <button class="btn gold" id="nBtn" onclick="publishShift()">Pubblica turno</button>
+      </div>
+    </div>
+
+    <!-- personale -->
+    <div id="aWorkers" style="display:none">
+      <div class="card">
+        <h2>Aggiungi extra</h2>
+        <p class="sub">Il codice viene generato in automatico. Comunicalo al lavoratore.</p>
+        <div class="row">
+          <div class="field"><label>Nome</label><input id="wkName" placeholder="Mario"></div>
+          <div class="field"><label>Cognome</label><input id="wkSurn" placeholder="Rossi"></div>
+        </div>
+        <div class="field"><label>Telefono (facoltativo)</label><input id="wkPhone" placeholder="+39 ..."></div>
+        <button class="btn gold" id="wkBtn" onclick="addWorker()">Crea extra & genera codice</button>
+      </div>
+      <div class="card">
+        <h2>Personale registrato</h2>
+        <p class="sub" id="wkCount">—</p>
+        <div id="wkList"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================================================================
+   CONFIG
+   =================================================================== */
+const CFG_KEY = 'turni_extra_cfg_url';
+let API = localStorage.getItem(CFG_KEY) || '';
+
+/* Per fissare l'URL definitivamente, scrivilo qui sotto tra gli apici
+   e l'app non chiederà più la configurazione: */
+const HARDCODED_API = 'https://script.google.com/macros/s/AKfycbzml9_og3yDY7k1ycznE4lJdxYUo4lVA2bU-s2sc5zn_Nixfa4W1isvfKf2-w9cg0zSbA/exec';
+if (HARDCODED_API) API = HARDCODED_API;
+
+let SESSION = null;   // { role:'worker'|'admin', code, name, count }
+
+/* ===================================================================
+   API HELPER  (Apps Script doGet con parametro JSONP-free via fetch text)
+   =================================================================== */
+async function api(action, payload={}){
+  if(!API) throw new Error('NO_CONFIG');
+  const body = JSON.stringify({action, ...payload});
+  const res = await fetch(API, {
+    method:'POST',
+    // Apps Script accetta text/plain senza preflight CORS
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body
+  });
+  const txt = await res.text();
+  let data;
+  try{ data = JSON.parse(txt); }
+  catch(e){ throw new Error('Risposta non valida dal server'); }
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+
+/* ===================================================================
+   UI HELPERS
+   =================================================================== */
+function show(id){
+  ['loginView','adminLoginView','workerView','adminView'].forEach(v=>{
+    document.getElementById(v).style.display = (v===id)?'block':'none';
+  });
+}
+function toast(msg, type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.className='toast '+type,3200);
+}
+function btnLoad(btn,on,label){
+  if(on){btn.dataset.lbl=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="loader"></span> '+(label||'Attendi…');}
+  else{btn.disabled=false;btn.innerHTML=btn.dataset.lbl;}
+}
+const MESI=['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+function fmtDate(iso){
+  const d=new Date(iso+'T00:00:00');
+  return {d:d.getDate(), m:MESI[d.getMonth()]};
+}
+function currentMonthKey(){
+  const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
+}
+
+/* ===================================================================
+   BOOT
+   =================================================================== */
+function boot(){
+  if(!API){ document.getElementById('needConfig').style.display='block'; }
+  const saved = sessionStorage.getItem('turni_session');
+  if(saved){
+    SESSION = JSON.parse(saved);
+    if(SESSION.role==='admin'){ enterAdmin(); }
+    else { enterWorker(); }
+  } else {
+    show('loginView');
+  }
+}
+function saveCfg(){
+  const u=document.getElementById('cfgUrl').value.trim();
+  if(!u){toast('Inserisci un URL valido','err');return;}
+  localStorage.setItem(CFG_KEY,u); API=u;
+  document.getElementById('needConfig').style.display='none';
+  toast('Configurazione salvata','ok');
+}
+function logout(){
+  sessionStorage.removeItem('turni_session'); SESSION=null;
+  document.getElementById('whoBox').style.display='none';
+  show('loginView');
+  document.getElementById('loginCode').value='';
+}
+
+/* ===================================================================
+   WORKER LOGIN
+   =================================================================== */
+async function doLogin(){
+  const code=document.getElementById('loginCode').value.trim().toUpperCase();
+  if(!code){toast('Inserisci il tuo codice','err');return;}
+  const btn=document.getElementById('loginBtn'); btnLoad(btn,true,'Verifico…');
+  try{
+    const r=await api('login',{code});
+    SESSION={role:'worker', code:r.code, name:r.name};
+    sessionStorage.setItem('turni_session',JSON.stringify(SESSION));
+    enterWorker();
+  }catch(e){
+    toast(e.message==='NO_CONFIG'?'Sistema non configurato':'Codice non valido','err');
+  }finally{ btnLoad(btn,false); }
+}
+
+function enterWorker(){
+  show('workerView');
+  document.getElementById('whoBox').style.display='block';
+  document.getElementById('whoName').innerHTML='<b>'+SESSION.name+'</b>extra';
+  wTab('avail');
+  loadWorker();
+}
+
+/* ===================================================================
+   WORKER DATA
+   =================================================================== */
+let WDATA=null;
+async function loadWorker(){
+  try{
+    const r=await api('workerData',{code:SESSION.code, month:currentMonthKey()});
+    WDATA=r;
+    renderWCounter(r.confirmedCount);
+    renderAvail(r.shifts, r.myApps);
+    renderMine(r.shifts, r.myApps);
+  }catch(e){
+    document.getElementById('wAvail').innerHTML='<div class="empty"><div class="ic">⚠</div>'+e.message+'</div>';
+  }
+}
+function renderWCounter(c){
+  document.getElementById('wCount').textContent=c;
+  document.getElementById('wBar').style.width=Math.min(100,c/12*100)+'%';
+  const box=document.getElementById('wLimitMsg');
+  if(c>=12){
+    box.innerHTML='<div class="status-line rej">Hai raggiunto il limite di 12 servizi confermati questo mese. Non puoi candidarti ad altri turni fino al mese prossimo.</div>';
+  } else if(c>=10){
+    box.innerHTML='<div class="status-line pending">Ti restano '+(12-c)+' servizi disponibili questo mese.</div>';
+  } else box.innerHTML='';
+}
+function appStatus(myApps, shiftId){
+  const a=myApps.find(x=>x.shiftId===shiftId);
+  return a?a.status:null; // 'pending'|'confirmed'|'rejected'|null
+}
+function renderAvail(shifts, myApps){
+  const c=WDATA.confirmedCount;
+  const blocked = c>=12;
+  const list=shifts.filter(s=>s.remaining>0 || appStatus(myApps,s.id));
+  if(!list.length){
+    document.getElementById('wAvail').innerHTML='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno disponibile al momento.<br>Ricontrolla più tardi.</div></div>';
+    return;
+  }
+  let h='';
+  list.sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    const fd=fmtDate(s.date);
+    const st=appStatus(myApps,s.id);
+    const full=s.remaining<=0;
+    let pill;
+    if(s.remaining<=0) pill='<span class="pill zero">Esaurito</span>';
+    else if(s.remaining<=2) pill='<span class="pill warn">'+s.remaining+' '+(s.remaining===1?'posto':'posti')+'</span>';
+    else pill='<span class="pill ok">'+s.remaining+' posti</span>';
+
+    let action='';
+    if(st==='pending') action='<div class="status-line pending">⏳ Candidatura inviata · in attesa di conferma</div>';
+    else if(st==='confirmed') action='<div class="status-line conf">✓ Confermato — sei in servizio</div>';
+    else if(st==='rejected') action='<div class="status-line rej">Candidatura non accettata</div>';
+    else if(blocked) action='<button class="btn ghost mini" disabled style="width:100%;margin-top:8px">Limite mensile raggiunto</button>';
+    else if(full) action='';
+    else action='<button class="btn gold mini" style="width:100%;margin-top:8px" onclick="applyShift(\''+s.id+'\',this)">Candidati a questo turno</button>';
+
+    h+='<div class="card shift '+(full&&!st?'full':'')+'" style="flex-direction:column;align-items:stretch">'
+      +'<div style="display:flex;gap:14px;align-items:center">'
+      +'<div class="date"><div class="d">'+fd.d+'</div><div class="m">'+fd.m+'</div></div>'
+      +'<div class="info"><div class="time">'+s.start+' – '+s.end+'</div>'
+      +(s.note?'<div class="note">'+s.note+'</div>':'')+'</div>'
+      + pill +'</div>'+ action +'</div>';
+  });
+  document.getElementById('wAvail').innerHTML=h;
+}
+function renderMine(shifts, myApps){
+  if(!myApps.length){
+    document.getElementById('wMine').innerHTML='<div class="card"><div class="empty"><div class="ic">📝</div>Non hai ancora candidature.</div></div>';
+    return;
+  }
+  let h='';
+  const order={confirmed:0,pending:1,rejected:2};
+  myApps.slice().sort((a,b)=>(order[a.status]-order[b.status])||a.date.localeCompare(b.date)).forEach(a=>{
+    const s=shifts.find(x=>x.id===a.shiftId)||{date:a.date,start:a.start,end:a.end,note:a.note};
+    const fd=fmtDate(s.date);
+    let sl;
+    if(a.status==='pending') sl='<div class="status-line pending">⏳ In attesa di conferma</div>';
+    else if(a.status==='confirmed') sl='<div class="status-line conf">✓ Confermato</div>';
+    else sl='<div class="status-line rej">✕ Non accettata</div>';
+    h+='<div class="card shift" style="flex-direction:column;align-items:stretch">'
+      +'<div style="display:flex;gap:14px;align-items:center">'
+      +'<div class="date"><div class="d">'+fd.d+'</div><div class="m">'+fd.m+'</div></div>'
+      +'<div class="info"><div class="time">'+s.start+' – '+s.end+'</div>'
+      +(s.note?'<div class="note">'+s.note+'</div>':'')+'</div></div>'+sl+'</div>';
+  });
+  document.getElementById('wMine').innerHTML=h;
+}
+function wTab(t){
+  document.getElementById('tabAvail').classList.toggle('active',t==='avail');
+  document.getElementById('tabMine').classList.toggle('active',t==='mine');
+  document.getElementById('wAvail').style.display=t==='avail'?'block':'none';
+  document.getElementById('wMine').style.display=t==='mine'?'block':'none';
+}
+async function applyShift(shiftId,btn){
+  btnLoad(btn,true,'Invio…');
+  try{
+    await api('apply',{code:SESSION.code, shiftId, month:currentMonthKey()});
+    toast('Candidatura inviata! In attesa di conferma.','ok');
+    await loadWorker();
+  }catch(e){
+    toast(e.message,'err'); btnLoad(btn,false);
+  }
+}
+
+/* ===================================================================
+   ADMIN
+   =================================================================== */
+function openAdmin(){ show('adminLoginView'); }
+async function doAdminLogin(){
+  const p=document.getElementById('admPass').value;
+  if(!p){toast('Inserisci la password','err');return;}
+  const btn=document.getElementById('admBtn'); btnLoad(btn,true,'Verifico…');
+  try{
+    await api('adminLogin',{pass:p});
+    SESSION={role:'admin', pass:p};
+    sessionStorage.setItem('turni_session',JSON.stringify(SESSION));
+    enterAdmin();
+  }catch(e){
+    toast('Password errata','err');
+  }finally{ btnLoad(btn,false); }
+}
+function enterAdmin(){
+  show('adminView');
+  document.getElementById('whoBox').style.display='block';
+  document.getElementById('whoName').innerHTML='<b>Responsabile</b>admin';
+  aTab('shifts'); loadAdmin();
+}
+function aTab(t){
+  ['shifts','new','workers'].forEach(x=>{
+    document.getElementById('atab'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===t);
+    document.getElementById('a'+x.charAt(0).toUpperCase()+x.slice(1)).style.display=x===t?'block':'none';
+  });
+  if(t==='workers') loadWorkers();
+}
+let ADATA=null;
+async function loadAdmin(){
+  try{
+    const r=await api('adminData',{pass:SESSION.pass, month:currentMonthKey()});
+    ADATA=r; renderAdminShifts(r);
+  }catch(e){
+    document.getElementById('aShifts').innerHTML='<div class="card"><div class="empty"><div class="ic">⚠</div>'+e.message+'</div></div>';
+  }
+}
+function renderAdminShifts(r){
+  if(!r.shifts.length){
+    document.getElementById('aShifts').innerHTML='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno pubblicato.<br>Vai su "Pubblica turno".</div></div>';
+    return;
+  }
+  let h='';
+  const pendTot=r.applications.filter(a=>a.status==='pending').length;
+  if(pendTot) h+='<div class="card" style="padding:14px 18px"><span class="badge">⏳ '+pendTot+' candidature in attesa</span></div>';
+
+  r.shifts.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    const fd=fmtDate(s.date);
+    const apps=r.applications.filter(a=>a.shiftId===s.id);
+    const conf=apps.filter(a=>a.status==='confirmed');
+    const pend=apps.filter(a=>a.status==='pending');
+    h+='<div class="card adm-shift">'
+      +'<div class="hd">'
+      +'<div style="display:flex;gap:12px;align-items:center">'
+      +'<div class="date"><div class="d">'+fd.d+'</div><div class="m">'+fd.m+'</div></div>'
+      +'<div><div class="time" style="font-weight:600;font-size:16px">'+s.start+' – '+s.end+'</div>'
+      +(s.note?'<div class="note" style="font-size:13px;color:#7a6e5d">'+s.note+'</div>':'')+'</div></div>'
+      +'<div style="text-align:right">'
+      +'<span class="pill '+(s.remaining<=0?'zero':s.remaining<=2?'warn':'ok')+'">'+s.remaining+'/'+s.slots+' liberi</span>'
+      +'<button class="copybtn" style="margin-left:8px" onclick="delShift(\''+s.id+'\')">Elimina</button>'
+      +'</div></div>';
+
+    if(conf.length){
+      h+='<div style="font-size:12px;font-weight:600;color:var(--green);margin-top:8px">Confermati ('+conf.length+')</div>';
+      conf.forEach(a=>{
+        h+='<div class="cand"><div><span class="nm">'+a.name+'</span></div>'
+          +'<button class="btn-no" onclick="setApp(\''+a.id+'\',\'rejected\',this)">Annulla</button></div>';
+      });
+    }
+    if(pend.length){
+      h+='<div style="font-size:12px;font-weight:600;color:var(--amber);margin-top:8px">In attesa ('+pend.length+')</div>';
+      pend.forEach(a=>{
+        h+='<div class="cand"><div><span class="nm">'+a.name+'</span> '
+          +'<span class="ct">· '+a.monthCount+'/12 questo mese</span></div>'
+          +'<div class="acts">'
+          +'<button class="btn-ok" onclick="setApp(\''+a.id+'\',\'confirmed\',this)">Conferma</button>'
+          +'<button class="btn-no" onclick="setApp(\''+a.id+'\',\'rejected\',this)">Rifiuta</button>'
+          +'</div></div>';
+      });
+    }
+    if(!conf.length && !pend.length){
+      h+='<div style="font-size:13px;color:#9a8e7a;margin-top:6px">Nessuna candidatura.</div>';
+    }
+    h+='</div>';
+  });
+  document.getElementById('aShifts').innerHTML=h;
+}
+async function setApp(appId,status,btn){
+  btnLoad(btn,true,'…');
+  try{
+    const r=await api('decide',{pass:SESSION.pass, appId, status, month:currentMonthKey()});
+    if(r.warning) toast(r.warning,'err');
+    else toast(status==='confirmed'?'Candidatura confermata':'Aggiornato','ok');
+    await loadAdmin();
+  }catch(e){ toast(e.message,'err'); btnLoad(btn,false); }
+}
+async function publishShift(){
+  const date=document.getElementById('nDate').value;
+  const start=document.getElementById('nStart').value;
+  const end=document.getElementById('nEnd').value;
+  const slots=parseInt(document.getElementById('nSlots').value);
+  const note=document.getElementById('nNote').value.trim();
+  if(!date||!start||!end||!slots){toast('Compila data, orari e posti','err');return;}
+  const btn=document.getElementById('nBtn'); btnLoad(btn,true,'Pubblico…');
+  try{
+    await api('addShift',{pass:SESSION.pass, date,start,end,slots,note});
+    toast('Turno pubblicato','ok');
+    document.getElementById('nNote').value='';
+    aTab('shifts'); loadAdmin();
+  }catch(e){ toast(e.message,'err'); }
+  finally{ btnLoad(btn,false); }
+}
+async function delShift(id){
+  if(!confirm('Eliminare questo turno e tutte le sue candidature?'))return;
+  try{ await api('delShift',{pass:SESSION.pass, shiftId:id}); toast('Turno eliminato','ok'); loadAdmin(); }
+  catch(e){ toast(e.message,'err'); }
+}
+
+/* --- workers --- */
+async function loadWorkers(){
+  document.getElementById('wkList').innerHTML='<div class="center-load"><div class="loader"></div></div>';
+  try{
+    const r=await api('listWorkers',{pass:SESSION.pass});
+    document.getElementById('wkCount').textContent=r.workers.length+' extra registrati';
+    if(!r.workers.length){document.getElementById('wkList').innerHTML='<div class="empty">Nessun extra ancora.</div>';return;}
+    let h='';
+    r.workers.forEach(w=>{
+      h+='<div class="worker-tag"><div><b>'+w.name+'</b>'+(w.phone?' <span style="color:#9a8e7a;font-size:12px">· '+w.phone+'</span>':'')+'</div>'
+        +'<div style="display:flex;gap:8px;align-items:center"><code>'+w.code+'</code>'
+        +'<button class="copybtn" onclick="navigator.clipboard.writeText(\''+w.code+'\');toast(\'Codice copiato\',\'ok\')">Copia</button></div></div>';
+    });
+    document.getElementById('wkList').innerHTML=h;
+  }catch(e){ document.getElementById('wkList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+async function addWorker(){
+  const name=document.getElementById('wkName').value.trim();
+  const surn=document.getElementById('wkSurn').value.trim();
+  const phone=document.getElementById('wkPhone').value.trim();
+  if(!name||!surn){toast('Inserisci nome e cognome','err');return;}
+  const btn=document.getElementById('wkBtn'); btnLoad(btn,true,'Creo…');
+  try{
+    const r=await api('addWorker',{pass:SESSION.pass, name,surn,phone});
+    toast('Extra creato · codice '+r.code,'ok');
+    document.getElementById('wkName').value='';document.getElementById('wkSurn').value='';document.getElementById('wkPhone').value='';
+    loadWorkers();
+  }catch(e){ toast(e.message,'err'); }
+  finally{ btnLoad(btn,false); }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(document.getElementById('loginView').style.display!=='none' && document.activeElement.id==='loginCode') doLogin();
+    if(document.getElementById('adminLoginView').style.display!=='none' && document.activeElement.id==='admPass') doAdminLogin();
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
