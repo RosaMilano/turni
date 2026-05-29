@@ -681,20 +681,58 @@ async function delShift(id){
 }
 
 /* --- workers --- */
+let WORKERS=[];
 async function loadWorkers(){
   document.getElementById('wkList').innerHTML='<div class="center-load"><div class="loader"></div></div>';
   try{
     const r=await api('listWorkers',{pass:SESSION.pass});
+    WORKERS=r.workers;
     document.getElementById('wkCount').textContent=r.workers.length+' extra registrati';
     if(!r.workers.length){document.getElementById('wkList').innerHTML='<div class="empty">Nessun extra ancora.</div>';return;}
     let h='';
     r.workers.forEach(w=>{
-      h+='<div class="worker-tag"><div><b>'+w.name+'</b>'+(w.phone?' <span style="color:#9a8e7a;font-size:12px">· '+w.phone+'</span>':'')+'</div>'
-        +'<div style="display:flex;gap:8px;align-items:center"><code>'+w.code+'</code>'
-        +'<button class="copybtn" onclick="navigator.clipboard.writeText(\''+w.code+'\');toast(\'Codice copiato\',\'ok\')">Copia</button></div></div>';
+      const c=w.code;
+      h+='<div class="worker-tag" style="flex-direction:column;align-items:stretch;gap:0">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">'
+        +'<div><b>'+w.name+'</b>'+(w.phone?' <span style="color:#9a8e7a;font-size:12px">· '+w.phone+'</span>':'')+'</div>'
+        +'<div style="display:flex;gap:6px;align-items:center">'
+        +'<code>'+c+'</code>'
+        +'<button class="copybtn" onclick="navigator.clipboard.writeText(\''+c+'\');toast(\'Codice copiato\',\'ok\')">Copia</button>'
+        +'<button class="copybtn" onclick="toggleEditWk(\''+c+'\')">Modifica</button>'
+        +'<button class="copybtn" style="color:var(--red);border-color:#e0c2b8" onclick="removeWk(\''+c+'\')">Elimina</button>'
+        +'</div></div>'
+        +'<div id="edit_'+c+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'
+        +'<div class="row"><div class="field" style="margin-bottom:8px"><label>Nome e cognome</label>'
+        +'<input id="en_'+c+'" value="'+w.name.replace(/"/g,'&quot;')+'"></div></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Telefono</label>'
+        +'<input id="ep_'+c+'" value="'+(w.phone||'').replace(/"/g,'&quot;')+'" placeholder="+39 ..."></div>'
+        +'<div style="display:flex;gap:8px"><button class="btn gold mini" onclick="saveWk(\''+c+'\',this)">Salva</button>'
+        +'<button class="btn ghost mini" onclick="toggleEditWk(\''+c+'\')">Annulla</button></div>'
+        +'</div></div>';
     });
     document.getElementById('wkList').innerHTML=h;
   }catch(e){ document.getElementById('wkList').innerHTML='<div class="empty">'+e.message+'</div>'; }
+}
+function toggleEditWk(code){
+  const el=document.getElementById('edit_'+code);
+  el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+async function saveWk(code,btn){
+  const name=document.getElementById('en_'+code).value.trim();
+  const phone=document.getElementById('ep_'+code).value.trim();
+  if(!name){toast('Il nome non può essere vuoto','err');return;}
+  btnLoad(btn,true,'Salvo…');
+  try{
+    await api('editWorker',{pass:SESSION.pass, code, name, surn:'', phone});
+    toast('Extra aggiornato','ok');
+    loadWorkers();
+  }catch(e){ toast(e.message,'err'); btnLoad(btn,false); }
+}
+async function removeWk(code){
+  const w=WORKERS.find(x=>x.code===code);
+  if(!confirm('Eliminare '+(w?w.name:'questo extra')+'? Il codice '+code+' non funzionerà più.'))return;
+  try{ await api('delWorker',{pass:SESSION.pass, code}); toast('Extra eliminato','ok'); loadWorkers(); }
+  catch(e){ toast(e.message,'err'); }
 }
 async function addWorker(){
   const name=document.getElementById('wkName').value.trim();
