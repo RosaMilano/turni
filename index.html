@@ -703,9 +703,9 @@ async function loadWorkers(){
         +'</div></div>'
         +'<div id="edit_'+c+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'
         +'<div class="row"><div class="field" style="margin-bottom:8px"><label>Nome e cognome</label>'
-        +'<input id="en_'+c+'" value="'+w.name.replace(/"/g,'&quot;')+'"></div></div>'
+        +'<input id="en_'+c+'" value="'+String(w.name||'').replace(/"/g,'&quot;')+'"></div></div>'
         +'<div class="field" style="margin-bottom:8px"><label>Telefono</label>'
-        +'<input id="ep_'+c+'" value="'+(w.phone||'').replace(/"/g,'&quot;')+'" placeholder="+39 ..."></div>'
+        +'<input id="ep_'+c+'" value="'+String(w.phone||'').replace(/"/g,'&quot;')+'" placeholder="+39 ..."></div>'
         +'<div style="display:flex;gap:8px"><button class="btn gold mini" onclick="saveWk(\''+c+'\',this)">Salva</button>'
         +'<button class="btn ghost mini" onclick="toggleEditWk(\''+c+'\')">Annulla</button></div>'
         +'</div></div>';
