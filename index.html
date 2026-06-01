@@ -165,6 +165,34 @@
   .btn-wa:hover{background:#1da851}
   .ref-priv{margin-top:10px;font-size:12.5px;font-weight:600;color:#6a5226;background:var(--amber-bg);border:1px dashed #e3cf9a;border-radius:8px;padding:7px 11px}
 
+  /* ---- calendario ---- */
+  .cal-card{padding:16px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-title{font-family:'Fraunces',serif;font-weight:600;font-size:18px}
+  .cal-nav{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:20px;cursor:pointer;color:var(--ink);line-height:1;font-family:inherit}
+  .cal-nav:hover{background:var(--paper2);border-color:var(--gold)}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal-wd{text-align:center;font-size:10px;font-weight:700;color:#9a8e7a;padding:3px 0;text-transform:uppercase;letter-spacing:.5px}
+  .cal-cell{position:relative;aspect-ratio:1/1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-size:14px;color:#c2b7a2;gap:2px}
+  .cal-cell.has{color:var(--ink);font-weight:600;background:var(--paper);border-color:var(--line)}
+  .cal-cell.has:hover{border-color:var(--gold)}
+  .cal-cell.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .cal-cell.empty{cursor:default}
+  .cal-d{line-height:1}
+  .cal-dot{min-width:7px;height:7px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+  .cal-dot.ok{background:var(--green)}
+  .cal-dot.zero{background:#c9bca6}
+  .cal-dot.mine{background:var(--gold)}
+  .cal-dot.pending{min-width:16px;height:16px;background:var(--red);padding:0 3px}
+  .cal-cell.sel .cal-dot.ok{background:#7fcf91}
+  .cal-cell.sel .cal-dot.mine{background:#e4b15f}
+  .cal-legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:13px;font-size:11.5px;color:#7a6e5d}
+  .cal-legend span{display:inline-flex;align-items:center;gap:5px}
+  .cal-legend i{width:9px;height:9px;border-radius:99px;display:inline-block;flex-shrink:0}
+  .day-title{font-family:'Fraunces',serif;font-weight:600;font-size:19px;text-transform:capitalize}
+  .day-shift{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;background:var(--paper)}
+  .day-shift:first-of-type{margin-top:16px}
+
   .worker-tag{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;background:var(--paper)}
   .worker-tag code{background:var(--ink);color:var(--gold);padding:3px 9px;border-radius:6px;font-size:13px;font-weight:600;letter-spacing:1px}
   .copybtn{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit}
@@ -396,6 +424,48 @@ function currentMonthKey(){
   const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
 }
 const MESI_FULL=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const GIORNI=['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const WD=['L','M','M','G','V','S','D'];
+function ymd(y,m,d){ return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function fmtDateFull(iso){
+  const d=new Date(iso+'T00:00:00');
+  return GIORNI[d.getDay()]+' '+d.getDate()+' '+MESI_FULL[d.getMonth()];
+}
+function calHeader(navFn,y,m){
+  const t=MESI_FULL[m].charAt(0).toUpperCase()+MESI_FULL[m].slice(1)+' '+y;
+  return '<div class="cal-head">'
+    +'<button class="cal-nav" onclick="'+navFn+'(-1)">‹</button>'
+    +'<div class="cal-title">'+t+'</div>'
+    +'<button class="cal-nav" onclick="'+navFn+'(1)">›</button></div>';
+}
+function calGrid(year,month,selDate,dotFn,clickFn){
+  const first=new Date(year,month,1);
+  const startDow=(first.getDay()+6)%7; // lunedì=0
+  const days=new Date(year,month+1,0).getDate();
+  let h='<div class="cal">';
+  WD.forEach(w=>h+='<div class="cal-wd">'+w+'</div>');
+  for(let i=0;i<startDow;i++) h+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=days;d++){
+    const ds=ymd(year,month,d);
+    const dot=dotFn(ds);
+    const sel=ds===selDate?' sel':'';
+    const has=dot?' has':'';
+    h+='<div class="cal-cell'+sel+has+'" onclick="'+clickFn+'(\''+ds+'\')">'
+      +'<span class="cal-d">'+d+'</span>'
+      +(dot?'<span class="cal-dot '+dot.cls+'">'+(dot.txt||'')+'</span>':'')
+      +'</div>';
+  }
+  return h+'</div>';
+}
+/* sceglie il giorno da pre-selezionare: oggi se ha turni, altrimenti il primo giorno con turni del mese */
+function pickDefaultDay(dateSet,year,month){
+  const today=ymd(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
+  const inMonth=[...dateSet].filter(ds=>{const p=ds.split('-');return +p[0]===year && (+p[1]-1)===month;}).sort();
+  if(!inMonth.length) return null;
+  const future=inMonth.filter(ds=>ds>=today);
+  if(inMonth.indexOf(today)>=0) return today;
+  return (future[0]||inMonth[0]);
+}
 function waPhone(p){
   let n=String(p||'').replace(/[^0-9]/g,'');
   if(n.startsWith('00')) n=n.slice(2);
@@ -492,24 +562,61 @@ function appStatus(myApps, shiftId){
   const a=myApps.find(x=>x.shiftId===shiftId);
   return a?a.status:null; // 'pending'|'confirmed'|'rejected'|null
 }
+let wYear, wMonth, wSel;
 function renderAvail(shifts, myApps){
-  const c=WDATA.confirmedCount;
-  const blocked = c>=12;
-  const list=shifts.filter(s=>s.remaining>0 || appStatus(myApps,s.id));
-  if(!list.length){
-    document.getElementById('wAvail').innerHTML='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno disponibile al momento.<br>Ricontrolla più tardi.</div></div>';
-    return;
+  if(wYear===undefined){ const n=new Date(); wYear=n.getFullYear(); wMonth=n.getMonth(); }
+  const dates=new Set(WDATA.shifts.map(s=>s.date));
+  if(wSel===undefined || wSel===null) wSel=pickDefaultDay(dates,wYear,wMonth);
+  renderWCal();
+}
+function wMonthNav(delta){
+  wMonth+=delta;
+  if(wMonth<0){wMonth=11;wYear--;} if(wMonth>11){wMonth=0;wYear++;}
+  const dates=new Set(WDATA.shifts.map(s=>s.date));
+  wSel=pickDefaultDay(dates,wYear,wMonth);
+  renderWCal();
+}
+function wPickDay(ds){ wSel=ds; renderWCal(); }
+function renderWCal(){
+  const shifts=WDATA.shifts, myApps=WDATA.myApps;
+  const dotFn=(ds)=>{
+    const day=shifts.filter(s=>s.date===ds);
+    if(!day.length) return null;
+    const mine=day.some(s=>appStatus(myApps,s.id));
+    const rem=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
+    if(mine) return {cls:'mine',txt:''};
+    if(rem<=0) return {cls:'zero',txt:''};
+    return {cls:'ok',txt:''};
+  };
+  let h='<div class="card cal-card">';
+  h+=calHeader('wMonthNav',wYear,wMonth);
+  h+=calGrid(wYear,wMonth,wSel,dotFn,'wPickDay');
+  h+='<div class="cal-legend">'
+    +'<span><i style="background:var(--green)"></i>Posti liberi</span>'
+    +'<span><i style="background:var(--gold)"></i>Ti sei candidato</span>'
+    +'<span><i style="background:#c9bca6"></i>Esaurito</span></div>';
+  h+='</div><div id="wDay"></div>';
+  document.getElementById('wAvail').innerHTML=h;
+  renderWDay();
+}
+function renderWDay(){
+  const box=document.getElementById('wDay'); if(!box) return;
+  if(!wSel){ box.innerHTML=''; return; }
+  const shifts=WDATA.shifts.filter(s=>s.date===wSel).sort((a,b)=>a.start.localeCompare(b.start));
+  const myApps=WDATA.myApps;
+  const blocked=WDATA.confirmedCount>=12;
+  let h='<div class="card"><div class="day-title">'+fmtDateFull(wSel)+'</div>';
+  if(!shifts.length){
+    h+='<div class="empty" style="padding:14px">Nessun turno in questa data.</div></div>';
+    box.innerHTML=h; return;
   }
-  let h='';
-  list.sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
-    const fd=fmtDate(s.date);
+  shifts.forEach(s=>{
     const st=appStatus(myApps,s.id);
     const full=s.remaining<=0;
     let pill;
     if(s.remaining<=0) pill='<span class="pill zero">Esaurito</span>';
     else if(s.remaining<=2) pill='<span class="pill warn">'+s.remaining+' '+(s.remaining===1?'posto':'posti')+'</span>';
     else pill='<span class="pill ok">'+s.remaining+' posti</span>';
-
     let action='';
     if(st==='pending') action='<div class="status-line pending">⏳ Candidatura inviata · in attesa di conferma</div>';
     else if(st==='confirmed') action='<div class="status-line conf">✓ Confermato — sei in servizio</div>';
@@ -517,15 +624,14 @@ function renderAvail(shifts, myApps){
     else if(blocked) action='<button class="btn ghost mini" disabled style="width:100%;margin-top:8px">Limite mensile raggiunto</button>';
     else if(full) action='';
     else action='<button class="btn gold mini" style="width:100%;margin-top:8px" onclick="applyShift(\''+s.id+'\',this)">Candidati a questo turno</button>';
-
-    h+='<div class="card shift '+(full&&!st?'full':'')+'" style="flex-direction:column;align-items:stretch">'
-      +'<div style="display:flex;gap:14px;align-items:center">'
-      +'<div class="date"><div class="d">'+fd.d+'</div><div class="m">'+fd.m+'</div></div>'
-      +'<div class="info"><div class="time">'+s.start+' – '+s.end+'</div>'
-      +(s.note?'<div class="note">'+s.note+'</div>':'')+'</div>'
-      + pill +'</div>'+ action +'</div>';
+    h+='<div class="day-shift">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      +'<div class="time" style="font-size:17px;font-weight:600">'+s.start+' – '+s.end+'</div>'+pill+'</div>'
+      +(s.note?'<div class="note" style="margin-top:4px">'+s.note+'</div>':'')
+      +action+'</div>';
   });
-  document.getElementById('wAvail').innerHTML=h;
+  h+='</div>';
+  box.innerHTML=h;
 }
 function renderMine(shifts, myApps){
   if(!myApps.length){
@@ -605,32 +711,72 @@ async function loadAdmin(){
     document.getElementById('aShifts').innerHTML='<div class="card"><div class="empty"><div class="ic">⚠</div>'+e.message+'</div></div>';
   }
 }
+let aYear, aMonth, aSel;
 function renderAdminShifts(r){
-  if(!r.shifts.length){
-    document.getElementById('aShifts').innerHTML='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno pubblicato.<br>Vai su "Pubblica turno".</div></div>';
-    return;
-  }
-  let h='';
+  if(aYear===undefined){ const n=new Date(); aYear=n.getFullYear(); aMonth=n.getMonth(); }
+  const dates=new Set(r.shifts.map(s=>s.date));
+  if(aSel===undefined || aSel===null) aSel=pickDefaultDay(dates,aYear,aMonth);
+  renderACal();
+}
+function aMonthNav(delta){
+  aMonth+=delta;
+  if(aMonth<0){aMonth=11;aYear--;} if(aMonth>11){aMonth=0;aYear++;}
+  const dates=new Set(ADATA.shifts.map(s=>s.date));
+  aSel=pickDefaultDay(dates,aYear,aMonth);
+  renderACal();
+}
+function aPickDay(ds){ aSel=ds; renderACal(); }
+function renderACal(){
+  const r=ADATA;
+  const dotFn=(ds)=>{
+    const day=r.shifts.filter(s=>s.date===ds);
+    if(!day.length) return null;
+    const pend=r.applications.filter(a=>a.status==='pending' && day.some(s=>s.id===a.shiftId)).length;
+    if(pend) return {cls:'pending',txt:String(pend)};
+    const rem=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
+    if(rem<=0) return {cls:'zero',txt:''};
+    return {cls:'ok',txt:''};
+  };
   const pendTot=r.applications.filter(a=>a.status==='pending').length;
-  if(pendTot) h+='<div class="card" style="padding:14px 18px"><span class="badge">⏳ '+pendTot+' candidature in attesa</span></div>';
-
-  r.shifts.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
-    const fd=fmtDate(s.date);
+  let h='';
+  if(pendTot) h+='<div class="card" style="padding:12px 16px;margin-bottom:14px"><span class="badge">⏳ '+pendTot+' candidature in attesa nel sistema</span></div>';
+  h+='<div class="card cal-card">';
+  h+=calHeader('aMonthNav',aYear,aMonth);
+  h+=calGrid(aYear,aMonth,aSel,dotFn,'aPickDay');
+  h+='<div class="cal-legend">'
+    +'<span><i style="background:var(--red)"></i>Candidature da gestire</span>'
+    +'<span><i style="background:var(--green)"></i>Posti liberi</span>'
+    +'<span><i style="background:#c9bca6"></i>Al completo</span></div>';
+  h+='</div><div id="aDay"></div>';
+  if(!r.shifts.length){
+    h='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno pubblicato.<br>Vai su "Pubblica turno".</div></div>';
+  }
+  document.getElementById('aShifts').innerHTML=h;
+  renderADay();
+}
+function renderADay(){
+  const box=document.getElementById('aDay'); if(!box) return;
+  const r=ADATA;
+  if(!aSel){ box.innerHTML=''; return; }
+  const shifts=r.shifts.filter(s=>s.date===aSel).sort((a,b)=>a.start.localeCompare(b.start));
+  let h='<div class="day-title" style="margin:4px 2px 10px">'+fmtDateFull(aSel)+'</div>';
+  if(!shifts.length){
+    h+='<div class="card"><div class="empty" style="padding:14px">Nessun turno in questa data.</div></div>';
+    box.innerHTML=h; return;
+  }
+  shifts.forEach(s=>{
     const apps=r.applications.filter(a=>a.shiftId===s.id);
     const conf=apps.filter(a=>a.status==='confirmed');
     const pend=apps.filter(a=>a.status==='pending');
     h+='<div class="card adm-shift">'
       +'<div class="hd">'
-      +'<div style="display:flex;gap:12px;align-items:center">'
-      +'<div class="date"><div class="d">'+fd.d+'</div><div class="m">'+fd.m+'</div></div>'
       +'<div><div class="time" style="font-weight:600;font-size:16px">'+s.start+' – '+s.end+'</div>'
-      +(s.note?'<div class="note" style="font-size:13px;color:#7a6e5d">'+s.note+'</div>':'')+'</div></div>'
+      +(s.note?'<div class="note" style="font-size:13px;color:#7a6e5d">'+s.note+'</div>':'')+'</div>'
       +'<div style="text-align:right">'
       +'<span class="pill '+(s.remaining<=0?'zero':s.remaining<=2?'warn':'ok')+'">'+s.remaining+'/'+s.slots+' liberi</span>'
       +'<button class="copybtn" style="margin-left:8px" onclick="delShift(\''+s.id+'\')">Elimina</button>'
       +'</div></div>'
       +(s.ref?'<div class="ref-priv">🔒 '+s.ref+'</div>':'');
-
     if(conf.length){
       h+='<div style="font-size:12px;font-weight:600;color:var(--green);margin-top:8px">Confermati ('+conf.length+')</div>';
       conf.forEach(a=>{
@@ -658,7 +804,7 @@ function renderAdminShifts(r){
     }
     h+='</div>';
   });
-  document.getElementById('aShifts').innerHTML=h;
+  box.innerHTML=h;
 }
 async function setApp(appId,status,btn){
   btnLoad(btn,true,'…');
