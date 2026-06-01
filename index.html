@@ -163,6 +163,7 @@
   .btn-no{background:var(--red);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
   .btn-wa{background:#25d366;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
   .btn-wa:hover{background:#1da851}
+  .ref-priv{margin-top:10px;font-size:12.5px;font-weight:600;color:#6a5226;background:var(--amber-bg);border:1px dashed #e3cf9a;border-radius:8px;padding:7px 11px}
 
   .worker-tag{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border:1px solid var(--line);border-radius:9px;margin-bottom:8px;background:var(--paper)}
   .worker-tag code{background:var(--ink);color:var(--gold);padding:3px 9px;border-radius:6px;font-size:13px;font-weight:600;letter-spacing:1px}
@@ -299,6 +300,12 @@
         <div class="field">
           <label>Nota (facoltativa)</label>
           <input id="nNote" placeholder="es. Catering sala Verdi · abito scuro">
+          <div class="hint">Questa nota è visibile anche ai camerieri.</div>
+        </div>
+        <div class="field">
+          <label>Riferimento privato (solo per te)</label>
+          <input id="nRef" placeholder="es. Evento Bianchi · agenda pag. 12 · ref. 4471">
+          <div class="hint">Visibile solo a te nel pannello, mai ai camerieri.</div>
         </div>
         <button class="btn gold" id="nBtn" onclick="publishShift()">Pubblica turno</button>
       </div>
@@ -621,13 +628,15 @@ function renderAdminShifts(r){
       +'<div style="text-align:right">'
       +'<span class="pill '+(s.remaining<=0?'zero':s.remaining<=2?'warn':'ok')+'">'+s.remaining+'/'+s.slots+' liberi</span>'
       +'<button class="copybtn" style="margin-left:8px" onclick="delShift(\''+s.id+'\')">Elimina</button>'
-      +'</div></div>';
+      +'</div></div>'
+      +(s.ref?'<div class="ref-priv">🔒 '+s.ref+'</div>':'');
 
     if(conf.length){
       h+='<div style="font-size:12px;font-weight:600;color:var(--green);margin-top:8px">Confermati ('+conf.length+')</div>';
       conf.forEach(a=>{
         const wa = a.phone ? '<a class="btn-wa" href="'+waUrl(a.phone,a.name,s)+'" target="_blank" rel="noopener">WhatsApp</a>' : '<span style="font-size:11px;color:#9a8e7a">no numero</span>';
-        h+='<div class="cand"><div><span class="nm">'+a.name+'</span></div>'
+        h+='<div class="cand"><div><span class="nm">'+a.name+'</span>'
+          +(a.appliedAt?'<div class="ct">Candidato il '+a.appliedAt+'</div>':'')+'</div>'
           +'<div class="acts">'+wa
           +'<button class="btn-no" onclick="setApp(\''+a.id+'\',\'rejected\',this)">Annulla</button></div></div>';
       });
@@ -636,7 +645,8 @@ function renderAdminShifts(r){
       h+='<div style="font-size:12px;font-weight:600;color:var(--amber);margin-top:8px">In attesa ('+pend.length+')</div>';
       pend.forEach(a=>{
         h+='<div class="cand"><div><span class="nm">'+a.name+'</span> '
-          +'<span class="ct">· '+a.monthCount+'/12 questo mese</span></div>'
+          +'<span class="ct">· '+a.monthCount+'/12 questo mese</span>'
+          +(a.appliedAt?'<div class="ct">Candidato il '+a.appliedAt+'</div>':'')+'</div>'
           +'<div class="acts">'
           +'<button class="btn-ok" onclick="setApp(\''+a.id+'\',\'confirmed\',this)">Conferma</button>'
           +'<button class="btn-no" onclick="setApp(\''+a.id+'\',\'rejected\',this)">Rifiuta</button>'
@@ -665,12 +675,14 @@ async function publishShift(){
   const end=document.getElementById('nEnd').value;
   const slots=parseInt(document.getElementById('nSlots').value);
   const note=document.getElementById('nNote').value.trim();
+  const ref=document.getElementById('nRef').value.trim();
   if(!date||!start||!end||!slots){toast('Compila data, orari e posti','err');return;}
   const btn=document.getElementById('nBtn'); btnLoad(btn,true,'Pubblico…');
   try{
-    await api('addShift',{pass:SESSION.pass, date,start,end,slots,note});
+    await api('addShift',{pass:SESSION.pass, date,start,end,slots,note,ref});
     toast('Turno pubblicato','ok');
     document.getElementById('nNote').value='';
+    document.getElementById('nRef').value='';
     aTab('shifts'); loadAdmin();
   }catch(e){ toast(e.message,'err'); }
   finally{ btnLoad(btn,false); }
