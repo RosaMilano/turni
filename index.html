@@ -173,22 +173,27 @@
   .cal-nav:hover{background:var(--paper2);border-color:var(--gold)}
   .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
   .cal-wd{text-align:center;font-size:10px;font-weight:700;color:#9a8e7a;padding:3px 0;text-transform:uppercase;letter-spacing:.5px}
-  .cal-cell{position:relative;aspect-ratio:1/1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-size:14px;color:#c2b7a2;gap:2px}
+  .cal-cell{position:relative;aspect-ratio:1/1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent;font-size:13px;color:#c2b7a2;gap:3px}
   .cal-cell.has{color:var(--ink);font-weight:600;background:var(--paper);border-color:var(--line)}
   .cal-cell.has:hover{border-color:var(--gold)}
   .cal-cell.sel{background:var(--ink);color:var(--paper);border-color:var(--ink)}
   .cal-cell.empty{cursor:default}
   .cal-d{line-height:1}
-  .cal-dot{min-width:7px;height:7px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
-  .cal-dot.ok{background:var(--green)}
-  .cal-dot.zero{background:#c9bca6}
-  .cal-dot.mine{background:var(--gold)}
-  .cal-dot.pending{min-width:16px;height:16px;background:var(--red);padding:0 3px}
-  .cal-cell.sel .cal-dot.ok{background:#7fcf91}
-  .cal-cell.sel .cal-dot.mine{background:#e4b15f}
+  .cmeta{display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:wrap;max-width:100%}
+  .cmeta b{font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
+  .cf{background:var(--green-bg);color:var(--green)}
+  .cf.off{background:var(--paper2);color:#b3a890}
+  .cc{background:#e8e0d0;color:#6a5f4d}
+  .cp{background:var(--red);color:#fff}
+  .cm{background:var(--gold);color:#fff}
+  .cal-cell.sel .cf{background:rgba(127,207,145,.22);color:#bfe6c8}
+  .cal-cell.sel .cf.off{background:rgba(244,239,230,.15);color:#cabfa9}
+  .cal-cell.sel .cc{background:rgba(244,239,230,.18);color:#e8dfce}
+  .cal-cell.sel .cp{background:#e0624a;color:#fff}
+  .cal-cell.sel .cm{background:#e4b15f;color:#3a2d18}
   .cal-legend{display:flex;gap:13px;flex-wrap:wrap;margin-top:13px;font-size:11.5px;color:#7a6e5d}
   .cal-legend span{display:inline-flex;align-items:center;gap:5px}
-  .cal-legend i{width:9px;height:9px;border-radius:99px;display:inline-block;flex-shrink:0}
+  .cal-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;flex-shrink:0}
   .day-title{font-family:'Fraunces',serif;font-weight:600;font-size:19px;text-transform:capitalize}
   .day-shift{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;background:var(--paper)}
   .day-shift:first-of-type{margin-top:16px}
@@ -447,12 +452,12 @@ function calGrid(year,month,selDate,dotFn,clickFn){
   for(let i=0;i<startDow;i++) h+='<div class="cal-cell empty"></div>';
   for(let d=1;d<=days;d++){
     const ds=ymd(year,month,d);
-    const dot=dotFn(ds);
+    const meta=dotFn(ds); // stringa HTML oppure null
     const sel=ds===selDate?' sel':'';
-    const has=dot?' has':'';
+    const has=meta?' has':'';
     h+='<div class="cal-cell'+sel+has+'" onclick="'+clickFn+'(\''+ds+'\')">'
       +'<span class="cal-d">'+d+'</span>'
-      +(dot?'<span class="cal-dot '+dot.cls+'">'+(dot.txt||'')+'</span>':'')
+      +(meta||'')
       +'</div>';
   }
   return h+'</div>';
@@ -582,19 +587,22 @@ function renderWCal(){
   const dotFn=(ds)=>{
     const day=shifts.filter(s=>s.date===ds);
     if(!day.length) return null;
+    const free=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
+    const conf=day.reduce((t,s)=>t+Math.max(0,s.slots-s.remaining),0);
     const mine=day.some(s=>appStatus(myApps,s.id));
-    const rem=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
-    if(mine) return {cls:'mine',txt:''};
-    if(rem<=0) return {cls:'zero',txt:''};
-    return {cls:'ok',txt:''};
+    let m='<span class="cmeta">';
+    m+='<b class="cf'+(free<=0?' off':'')+'">'+free+'</b>';
+    m+='<b class="cc">'+conf+'</b>';
+    if(mine) m+='<b class="cm">★</b>';
+    return m+'</span>';
   };
   let h='<div class="card cal-card">';
   h+=calHeader('wMonthNav',wYear,wMonth);
   h+=calGrid(wYear,wMonth,wSel,dotFn,'wPickDay');
   h+='<div class="cal-legend">'
-    +'<span><i style="background:var(--green)"></i>Posti liberi</span>'
-    +'<span><i style="background:var(--gold)"></i>Ti sei candidato</span>'
-    +'<span><i style="background:#c9bca6"></i>Esaurito</span></div>';
+    +'<span><i style="background:var(--green)"></i>liberi</span>'
+    +'<span><i style="background:#9a8e7a"></i>confermati</span>'
+    +'<span><i style="background:var(--gold)"></i>★ tua candidatura</span></div>';
   h+='</div><div id="wDay"></div>';
   document.getElementById('wAvail').innerHTML=h;
   renderWDay();
@@ -731,11 +739,14 @@ function renderACal(){
   const dotFn=(ds)=>{
     const day=r.shifts.filter(s=>s.date===ds);
     if(!day.length) return null;
+    const free=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
+    const conf=day.reduce((t,s)=>t+Math.max(0,s.slots-s.remaining),0);
     const pend=r.applications.filter(a=>a.status==='pending' && day.some(s=>s.id===a.shiftId)).length;
-    if(pend) return {cls:'pending',txt:String(pend)};
-    const rem=day.reduce((t,s)=>t+Math.max(0,s.remaining),0);
-    if(rem<=0) return {cls:'zero',txt:''};
-    return {cls:'ok',txt:''};
+    let m='<span class="cmeta">';
+    if(pend) m+='<b class="cp">'+pend+'</b>';
+    m+='<b class="cf'+(free<=0?' off':'')+'">'+free+'</b>';
+    m+='<b class="cc">'+conf+'</b>';
+    return m+'</span>';
   };
   const pendTot=r.applications.filter(a=>a.status==='pending').length;
   let h='';
@@ -744,9 +755,9 @@ function renderACal(){
   h+=calHeader('aMonthNav',aYear,aMonth);
   h+=calGrid(aYear,aMonth,aSel,dotFn,'aPickDay');
   h+='<div class="cal-legend">'
-    +'<span><i style="background:var(--red)"></i>Candidature da gestire</span>'
-    +'<span><i style="background:var(--green)"></i>Posti liberi</span>'
-    +'<span><i style="background:#c9bca6"></i>Al completo</span></div>';
+    +'<span><i style="background:var(--red)"></i>da gestire</span>'
+    +'<span><i style="background:var(--green)"></i>liberi</span>'
+    +'<span><i style="background:#9a8e7a"></i>confermati</span></div>';
   h+='</div><div id="aDay"></div>';
   if(!r.shifts.length){
     h='<div class="card"><div class="empty"><div class="ic">📅</div>Nessun turno pubblicato.<br>Vai su "Pubblica turno".</div></div>';
