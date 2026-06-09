@@ -971,9 +971,20 @@ function renderADay(){
       +(s.note?'<div class="note" style="font-size:13px;color:#7a6e5d">'+s.note+'</div>':'')+'</div>'
       +'<div style="text-align:right">'
       +'<span class="pill '+(s.remaining<=0?'zero':s.remaining<=2?'warn':'ok')+'">'+s.remaining+'/'+s.slots+' liberi</span>'
-      +'<button class="copybtn" style="margin-left:8px" onclick="delShift(\''+s.id+'\')">Elimina</button>'
+      +'<button class="copybtn" style="margin-left:8px" onclick="toggleEditShift(\''+s.id+'\')">Modifica</button>'
+      +'<button class="copybtn" style="margin-left:6px;color:var(--red);border-color:#e0c2b8" onclick="delShift(\''+s.id+'\')">Elimina</button>'
       +'</div></div>'
-      +(s.ref?'<div class="ref-priv">🔒 '+s.ref+'</div>':'');
+      +(s.ref?'<div class="ref-priv">🔒 '+s.ref+'</div>':'')
+      +'<div id="es_'+s.id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">'
+        +'<div class="field" style="margin-bottom:8px"><label>Data</label><input type="date" id="ed_'+s.id+'" value="'+s.date+'"></div>'
+        +'<div class="row"><div class="field" style="margin-bottom:8px"><label>Dalle</label><input type="time" id="est_'+s.id+'" value="'+s.start+'"></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Alle</label><input type="time" id="een_'+s.id+'" value="'+s.end+'"></div></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Posti disponibili</label><input type="number" min="1" id="esl_'+s.id+'" value="'+s.slots+'"><div class="hint">Già confermati: '+conf.length+'. Non puoi scendere sotto questo numero.</div></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Nota (pubblica)</label><input id="eno_'+s.id+'" value="'+String(s.note||'').replace(/"/g,'&quot;')+'"></div>'
+        +'<div class="field" style="margin-bottom:8px"><label>Riferimento privato</label><input id="erf_'+s.id+'" value="'+String(s.ref||'').replace(/"/g,'&quot;')+'"></div>'
+        +'<div style="display:flex;gap:8px"><button class="btn gold mini" onclick="saveShift(\''+s.id+'\',this)">Salva modifiche</button>'
+        +'<button class="btn ghost mini" onclick="toggleEditShift(\''+s.id+'\')">Annulla</button></div>'
+      +'</div>';
     if(conf.length){
       h+='<div style="font-size:12px;font-weight:600;color:var(--green);margin-top:8px">Confermati ('+conf.length+')</div>';
       conf.forEach(a=>{
@@ -1034,6 +1045,25 @@ async function delShift(id){
   if(!confirm('Eliminare questo turno e tutte le sue candidature?'))return;
   try{ await api('delShift',{pass:SESSION.pass, shiftId:id}); toast('Turno eliminato','ok'); loadAdmin(); }
   catch(e){ toast(e.message,'err'); }
+}
+function toggleEditShift(id){
+  const el=document.getElementById('es_'+id);
+  if(el) el.style.display = el.style.display==='none' ? 'block' : 'none';
+}
+async function saveShift(id,btn){
+  const date=document.getElementById('ed_'+id).value;
+  const start=document.getElementById('est_'+id).value;
+  const end=document.getElementById('een_'+id).value;
+  const slots=parseInt(document.getElementById('esl_'+id).value);
+  const note=document.getElementById('eno_'+id).value.trim();
+  const ref=document.getElementById('erf_'+id).value.trim();
+  if(!date||!start||!end||!slots){toast('Compila data, orari e posti','err');return;}
+  btnLoad(btn,true,'Salvo…');
+  try{
+    await api('editShift',{pass:SESSION.pass, shiftId:id, date,start,end,slots,note,ref});
+    toast('Turno aggiornato','ok');
+    loadAdmin();
+  }catch(e){ toast(e.message,'err'); btnLoad(btn,false); }
 }
 
 /* --- workers --- */
